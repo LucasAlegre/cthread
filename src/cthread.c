@@ -16,37 +16,77 @@ TCB_t *runningThread;
 
 ucontext_t scheduler;
 
-int tid = 0;
+int TID = 0;
 int libraryInitialized = 0;
 
 int getNextTid(){
-	return ++tid;
+	return ++TID;
+}
+
+// Returns 1 if the tid is on queue, 0 otherwise
+int isTidOnQueue(PFILA2 queue, int tid){
+    TCB_t *thread;
+
+     // Put iterator at the beggining and returns if queue is empty
+    if(FirstFILA2(queue) != 0)
+        return 0;
+
+    do{
+        thread = (TCB_t*) getAtIteratorFila2(queue);
+        if(tid == thread->tid)
+            return 1;
+    }while(NextFila2(queue) == 0);
+
+    // Tid not found
+    return 0;
+
+}
+
+int deleteTidOnQueue(PFILA2 queue, int tid){
+    
+    TCB_t *thread;
+
+     // Put iterator at the beggining and returns if queue is empty
+    if(FirstFILA2(queue) != 0)
+        return -1;
+
+    do{
+        thread = (TCB_t*) getAtIteratorFila2(queue);
+        if(tid == thread->tid){
+            DeleteAtIteratorFila2(queue);
+            return 0;
+        }
+    }while(NextFila2(queue) == 0);
+
+    // Tid not found
+    return -1;
+
 }
 
 void initializeCthread(){
-	if(libraryInitialized)
-		return;
+    if(libraryInitialized)
+        return;
 
-	if(CreateFila2(&runQueue) != 0)
-		printf("Error: Run Queue initialization failed\n");
-	if(CreateFila2(&sRunQueue) != 0)
-		printf("Error: Suspend-Run Queue initialization failed\n");
-	if(CreateFila2(&blockedQueue) != 0)
-		printf("Error: Blocked Queue initialization failed\n");
-	if(CreateFila2(&sBlockedQueue) != 0)
-		printf("Error: Suspend-Blocked Queue initialization failed\n");
+    if(CreateFila2(&runQueue) != 0)
+        printf("Error: Run Queue initialization failed\n");
+    if(CreateFila2(&sRunQueue) != 0)
+        printf("Error: Suspend-Run Queue initialization failed\n");
+    if(CreateFila2(&blockedQueue) != 0)
+        printf("Error: Blocked Queue initialization failed\n");
+    if(CreateFila2(&sBlockedQueue) != 0)
+        printf("Error: Suspend-Blocked Queue initialization failed\n");
 	
-	mainThread.tid = 0;
-	mainThread.prio = 0;
-	mainThread.state = PROCST_EXEC;
-	getcontext(&(mainThread.context));
+    mainThread.tid = 0;
+    mainThread.prio = 0;
+    mainThread.state = PROCST_EXEC;
+    getcontext(&(mainThread.context));
 
     runningThread = &mainThread;
 
-	getcontext(&scheduler);
-	makecontext(&scheduler, FUNCAOAQUI, 0);
+    getcontext(&scheduler);
+    makecontext(&scheduler, FUNCAOAQUI, 0);
 
-	libraryInitialized = 1;
+    libraryInitialized = 1;
 }
 
 int cidentify (char *name, int size){
@@ -93,8 +133,86 @@ int csuspend(int tid);
 
 int cresume(int tid);
 
-int csem_init(csem_t *sem, int count);
+int csem_init(csem_t *sem, int count){
+    initializeCThread();
 
-int cwait(csem_t *sem);
+    sem->count = count;
+    if(CreateFila2(sem->fila) == 0){
+        return 0;
+    }
+    else{
+        printf("Error: Semaphore queue creation failed\n");
+        return -1;
+    }
+}
 
-int csignal(csem_t *sem);
+int cwait(csem_t *sem){
+    initalizeCThread();
+
+    if(sem == NULL){
+        return -1;
+    }
+
+    sem->count = sem->count - 1;
+
+    if(sem->count < 0){
+        TCB_t* blockedThread = runningThread;
+        blockedThread->state = PROCST_BLOQ;
+        if(AppendFila2(&blockedQueue, (void*)blockedThread) != 0){
+            return -1;
+        }
+        if(AppendFila2(sem->fila, (void*)blockdThread) != 0){
+            return -1;
+        }
+
+        runningThread = NULL;
+
+        //chama escalonador
+    }
+
+    return 0;
+}
+
+int csignal(csem_t *sem){
+    initializeCThread();
+    
+    if(sem == NULL){
+        return -1;
+    }
+
+    sem->count = sem->count + 1;
+
+    // Se fila não está vazia
+    if(FirstFila2(sem->fila) == 0){
+        // Get first on semaphore queue and remove it
+        TCB_t* wakeThread = (TCB_t*) GetAtIteratorFila2(sem->fila);
+        DeleteAtIteratorFila2(sem->fila);
+        
+        // Remove from blocked and put on run queue
+        if(wakeThread->state == PROCST_BLOQ){
+            if(deleteTidOnQueue(&blockedQueue, wakeThread->tid) != 0){
+                return -1;
+            }
+            if(AppendFila2(&runQueue, (void*)wakeThread) != 0){
+                return -1;
+            }
+            wakeThread->state = PROCST_APTO;
+        }
+        // Remove from blocked suspend and put on run suspend queue
+        else if(wakeThread->state == PROCST_BLOQ_SUS){
+            if(deleteTidOnQueue(&sBlockedQueue, wakeThread->tid) != 0){
+                return -1;
+            }
+            if(AppendFila2(&sRunQueue, (void*)wakeThread) != 0){
+                return -1;
+            }
+            wakeThread->state = PROCST_APTO_SUS;
+        }
+        else{
+            printf("Error: Thread was waiting at semaphore but wasn't neither blocked nor blocked suspend\n");
+            return -1;
+        }
+    }
+
+    return 0;
+}
