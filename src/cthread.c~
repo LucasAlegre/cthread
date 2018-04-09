@@ -65,7 +65,7 @@ int deleteTidOnQueue(PFILA2 queue, int tid){
 
 // Removes thread from queue and returs thread pointer in returnThread
 // ret: 0 == no error
-//      else ERROR
+//      -n == ERROR
 int pullTidOnQueue(PFILA2 queue, int tid, TCB_t** returnThread){
     
     TCB_t *thread;
