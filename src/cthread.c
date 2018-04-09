@@ -43,7 +43,7 @@ int isTidOnQueue(PFILA2 queue, int tid){
 }
 
 int deleteTidOnQueue(PFILA2 queue, int tid){
-    
+
     TCB_t *thread;
 
      // Put iterator at the beggining and returns if queue is empty
@@ -67,7 +67,7 @@ int deleteTidOnQueue(PFILA2 queue, int tid){
 // ret: 0 == no error
 //      else ERROR
 int pullTidOnQueue(PFILA2 queue, int tid, TCB_t** returnThread){
-    
+
     TCB_t *thread;
 
     // Put iterator at the beggining and returns if queue is empty
@@ -100,7 +100,7 @@ void initializeCthread(){
         printf("Error: Blocked Queue initialization failed\n");
     if(CreateFila2(&sBlockedQueue) != 0)
         printf("Error: Suspend-Blocked Queue initialization failed\n");
-	
+
     mainThread.tid = 0;
     mainThread.prio = 0;
     mainThread.state = PROCST_EXEC;
@@ -130,12 +130,12 @@ int cidentify (char *name, int size){
 
 int ccreate (void* (*start)(void*), void *arg, int prio){
     initializeCthread();
-	
+
     TCB_t *createdThread = (*TCB_t)malloc(sizeof(TCB_t));
     createdThread->tid = getNextTid();   
     createdThread->prio = 0;
     createdThread->state = PROCST_APTO;
-    
+
     getcontext(&(createdThread->context));
     createdThread->context.uc_link = //linkarr;
     createdThread->context.uc_stack.ss_sp = (char*)malloc(SIGSTKSZ);
@@ -147,7 +147,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio){
         return -1;
     }
 
-    return 0;    
+    return 0;
 }
 
 int cyield(void);
@@ -189,10 +189,46 @@ int csuspend(int tid) {
         }
         return -2;
     }
-    
+
 }
 
-int cresume(int tid);
+int cresume(int tid) {
+    initializeCThread();
+
+    // Thread cant self resume
+    if (runningThread->tid == tid) {
+        return -1;
+    }
+
+    // Check if thread is in suspended run queue
+    if (isTidOnQueue(sRunQueue, tid)) {
+        TCB_t* thread;
+
+        // Tries to remove thread from suspended queue (0 == no error)
+        if(pullTidOnQueue(sRunQueue, tid, &thread) == 0) {
+            // Tries to append thread to queue
+            if(AppendFila2(&runQueue, (void*)thread) == 0) {
+                return 0;
+            }
+        }
+        return -2;
+    }
+
+    // Check if thread is in suspended blocked queue
+    if (isTidOnQueue(sBlockedQueue, tid)) {
+        TCB_t* thread;
+
+        // Tries to remove thread from suspended queue (0 == no error)
+        if(pullTidOnQueue(sBlockedQueue, tid, &thread) == 0) {
+            // Tries to append thread to queue
+            if(AppendFila2(&blockedQueue, (void*)thread) == 0) {
+                return 0;
+            }
+        }
+        return -2;
+    }
+
+}
 
 int csem_init(csem_t *sem, int count){
     initializeCThread();
