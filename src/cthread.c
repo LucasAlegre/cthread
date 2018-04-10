@@ -5,10 +5,10 @@
 #include "support.h"
 #include "cthread.h"
 
-FILA2 runQueue;
-FILA2 blockedQueue;
-FILA2 sRunQueue;
-FILA2 sBlockedQueue;
+FILA2 runQueue; // queue of threads that are ready to run
+FILA2 blockedQueue; // queue of blocked threads
+FILA2 sRunQueue; // queue of suspended threads that are ready to run
+FILA2 sBlockedQueue; // queue of suspended blocked threads
 
 TCB_t mainThread;
 
@@ -63,6 +63,19 @@ int deleteTidOnQueue(PFILA2 queue, int tid){
 
 }
 
+int schedule(){
+    if(FirstFILA2(runQueue) != 0)
+        return 0;
+
+    runningThread = (TCB_t*) GetAtIteratorFila2(&runQueue);
+    DeleteAtIteratorFila2(&runQueue);
+
+    runningThread->state = PROCST_EXEC;
+    setcontext(&runningThread->context);
+
+    return 0;
+}
+
 void initializeCthread(){
     if(libraryInitialized)
         return;
@@ -84,14 +97,14 @@ void initializeCthread(){
     runningThread = &mainThread;
 
     getcontext(&scheduler);
-    makecontext(&scheduler, FUNCAOAQUI, 0);
+    makecontext(&scheduler, (void(*)(void))schedule, 0);
 
     libraryInitialized = 1;
 }
 
 int cidentify (char *name, int size){
 
-    char *group = "Lucas Nunes Alegre 00274693\nAline Weber\nLucas Sonntag Hagen\n\0";
+    char *group = "Lucas Nunes Alegre 00274693\nAline Weber 00274720\nLucas Sonntag Hagen\n\0";
     if(size < strlen(group){
         printf("Size given is not sufficient to copy the whole string!\n");
         return -1;
@@ -125,7 +138,30 @@ int ccreate (void* (*start)(void*), void *arg, int prio){
     return 0;    
 }
 
-int cyield(void);
+int cyield(void){
+    TCB_t* threadYield;
+
+    initializeCThread();
+
+    // in case that there are no threads to run next
+    if(FirstFila2(&runQueue) != 0)
+        return 0;
+
+    threadYield = runningThread;
+    threadYield->state = PROCST_APTO;
+
+    if(AppendFila2(&runQueue, (void*)threadYield) != 0){
+        printf("Error: insertion of the thread back in the Run Queue failed\n");
+        return -1;
+    }
+
+    runningThread = NULL;
+
+    if(swapcontext(&threadYield->context, &scheduler) == -1)
+        return -1;
+
+    return 0;
+}
 
 int cjoin(int tid);
 
