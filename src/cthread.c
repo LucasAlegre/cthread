@@ -122,24 +122,15 @@ void initializeCthread(){
     runningThread = &mainThread;
 
     getcontext(&scheduler);
-<<<<<<< HEAD
     makecontext(&scheduler, (void(*)(void))schedule, 0);
-=======
-    //makecontext(&scheduler, FUNCAOAQUI, 0);
->>>>>>> 43dc44991beba37218dede3bccadab945a0e7722
 
     libraryInitialized = 1;
 }
 
 int cidentify(char *name, int size){
 
-<<<<<<< HEAD
     char *group = "Lucas Nunes Alegre 00274693\nAline Weber 00274720\nLucas Sonntag Hagen\n\0";
-    if(size < strlen(group){
-=======
-    char *group = "Lucas Nunes Alegre 00274693\nAline Weber\nLucas Sonntag Hagen\n\0";
     if(size < strlen(group)){
->>>>>>> 43dc44991beba37218dede3bccadab945a0e7722
         printf("Size given is not sufficient to copy the whole string!\n");
         return -1;
     }
@@ -173,12 +164,6 @@ int ccreate (void* (*start)(void*), void *arg, int prio){
 }
 
 int cyield(void){
-
-    return 0;
-}
-
-<<<<<<< HEAD
-int cyield(void){
     TCB_t* threadYield;
 
     initializeCThread();
@@ -199,11 +184,10 @@ int cyield(void){
 
     if(swapcontext(&threadYield->context, &scheduler) == -1)
         return -1;
+}
 
-=======
 int cjoin(int tid){
-    
->>>>>>> 43dc44991beba37218dede3bccadab945a0e7722
+
     return 0;
 }
 
