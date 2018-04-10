@@ -15,7 +15,11 @@ TCB_t mainThread;
 
 TCB_t *runningThread;
 
-ucontext_t scheduler;
+ucontext_t scheduler; // context to schedule and dispatch
+char schedulerStack[SIGSTKSZ];
+
+ucontext_t finalize; // context to finalize thread execution 
+char finalizeStack[SIGSTKSZ];
 
 int TID = 0;
 int libraryInitialized = 0;
@@ -101,6 +105,22 @@ int schedule(){
     return 0;
 }
 
+// call function to free blocked threads
+// free memory alocated to thread that has finished
+// call the scheduler
+int threadFinalized(){
+    // check join here
+
+    free(runningThread->context.uc_stack.ss_sp); //free thread stack
+    free(runningThread); // free thread
+
+    runningThread = NULL;
+    
+    schedule();
+
+    return 0;
+}
+
 void initializeCthread(){
     if(libraryInitialized)
         return;
@@ -122,7 +142,16 @@ void initializeCthread(){
     runningThread = &mainThread;
 
     getcontext(&scheduler);
+    scheduler.uc_link = 0;
+    scheduler.uc_stack.ss_sp = schedulerStack;
+    scheduler.uc_stack.ss_size = SIGSTKSZ;
     makecontext(&scheduler, (void(*)(void))schedule, 0);
+
+    getcontext(&finalize);
+    finalize.uc_link = 0;
+    finalize.uc_stack.ss_sp = finalizeStack;
+    finalize.uc_stack.ss_size = SIGSTKSZ;
+    makecontext(&finalize, (void(*)(void))threadFinalized, 0);
 
     libraryInitialized = 1;
 }
@@ -150,7 +179,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio){
     createdThread->state = PROCST_APTO;
 
     getcontext(&(createdThread->context));
-    createdThread->context.uc_link = //linkarr;
+    createdThread->context.uc_link = &finalize;
     createdThread->context.uc_stack.ss_sp = (char*)malloc(SIGSTKSZ);
     createdThread->context.uc_stack.ss_size = SIGSTKSZ;
     makecontext(&(createdThread->context), (void(*)(void))start, 1, arg);
@@ -184,6 +213,8 @@ int cyield(void){
 
     if(swapcontext(&threadYield->context, &scheduler) == -1)
         return -1;
+
+    return 0;
 }
 
 int cjoin(int tid){
