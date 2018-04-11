@@ -93,7 +93,7 @@ int pullTidOnQueue(PFILA2 queue, int tid, TCB_t** returnThread){
 }
 
 int schedule(){
-    if(FirstFILA2(runQueue) != 0)
+    if(FirstFila2(&runQueue) != 0)
         return 0;
 
     runningThread = (TCB_t*) GetAtIteratorFila2(&runQueue);
@@ -121,7 +121,7 @@ int threadFinalized(){
     return 0;
 }
 
-void initializeCthread(){
+void initializeCThread(){
     if(libraryInitialized)
         return;
 
@@ -171,7 +171,7 @@ int cidentify(char *name, int size){
 }
 
 int ccreate (void* (*start)(void*), void *arg, int prio){
-    initializeCthread();
+    initializeCThread();
 
     TCB_t* createdThread = (TCB_t*)malloc(sizeof(TCB_t));
     createdThread->tid = getNextTid();   
@@ -223,7 +223,7 @@ int cjoin(int tid){
 }
 
 int csuspend(int tid) {
-    initializeCthread();
+    initializeCThread();
 
     // Thread cant self suspend
     if (runningThread->tid == tid) {
@@ -263,7 +263,7 @@ int csuspend(int tid) {
 }
 
 int cresume(int tid) {
-    initializeCthread();
+    initializeCThread();
 
     // Thread cant self resume
     if (runningThread->tid == tid) {
@@ -303,7 +303,7 @@ int cresume(int tid) {
 }
 
 int csem_init(csem_t *sem, int count){
-    initializeCthread();
+    initializeCThread();
 
     sem->count = count;
     if(CreateFila2(sem->fila) == 0){
@@ -316,7 +316,7 @@ int csem_init(csem_t *sem, int count){
 }
 
 int cwait(csem_t *sem){
-    initializeCthread();
+    initializeCThread();
 
     if(sem == NULL){
         return -1;
@@ -324,6 +324,7 @@ int cwait(csem_t *sem){
 
     sem->count = sem->count - 1;
 
+    // If there is no recurse, sleep
     if(sem->count < 0){
         TCB_t* blockedThread = runningThread;
         blockedThread->state = PROCST_BLOQ;
@@ -336,14 +337,15 @@ int cwait(csem_t *sem){
 
         runningThread = NULL;
 
-        //chama escalonador
+        //Call scheduler
+        swapcontext(&(blockedThread->context), &scheduler);
     }
 
     return 0;
 }
 
 int csignal(csem_t *sem){
-    initializeCthread();
+    initializeCThread();
     
     if(sem == NULL){
         return -1;
