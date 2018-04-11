@@ -34,5 +34,11 @@ typedef struct s_TCB {
 	
 } TCB_t; 
 
+typedef struct s_pair
+{
+	int tid_blocking; // identificador da thread que está mantendo a outra bloqueada
+	int tid_blocked; // identificador da thread que está bloqueada esperando a outra finalizar
+	
+} pair;
 
 #endif

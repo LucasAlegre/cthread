@@ -11,8 +11,9 @@ FILA2 blockedQueue; // queue of blocked threads
 FILA2 sRunQueue; // queue of suspended threads that are ready to run
 FILA2 sBlockedQueue; // queue of suspended blocked threads
 
-TCB_t mainThread;
+FILA2 joinedThreads; // list of pairs (blockingThread, blockedThread)
 
+TCB_t mainThread;
 TCB_t *runningThread;
 
 ucontext_t scheduler; // context to schedule and dispatch
@@ -92,6 +93,57 @@ int pullTidOnQueue(PFILA2 queue, int tid, TCB_t** returnThread){
     return -1;
 }
 
+// It returns 1 if the given tid is already blocking another thread, 0 otherwise
+int isJoined(int tid){
+    pair *joinThreads;
+
+     // Put iterator at the beggining and returns if list is empty
+    if(FirstFila2(&joinedThreads) != 0)
+        return 0;
+
+    do{
+        joinThreads = (pair*)GetAtIteratorFila2(&joinedThreads);
+        if(tid == joinThreads->tid_blocking)
+            return 1;
+    }while(NextFila2(&joinedThreads) == 0);
+
+    return 0;
+}
+
+// unblock thread that was waiting for the running thread
+int unblockThread(){
+    pair *joinThreads;
+    TCB_t *blockedThread;
+
+     // Put iterator at the beggining and returns if list is empty
+    if(FirstFila2(&joinedThreads) != 0)
+        return 0;
+
+    do{
+        joinThreads = (pair*)GetAtIteratorFila2(&joinedThreads);
+        if(runningThread->tid == joinThreads->tid_blocking){
+            // if thread was blocked and not suspended
+            // remove thread from blockedQueue and put in runQueue
+            if(pullTidOnQueue(&blockedQueue, joinThreads->tid_blocked, &blockedThread) == 0){
+                if(AppendFila2(&runQueue, (void *)blockedThread) != 0){
+                    printf("Error: insertion of the thread in the run queue failed");
+                }
+                return 0;
+            }
+            // if thread was blocked and suspended
+            // remove thread from sBlockedQueue and put in sRunQueue
+            else if(pullTidOnQueue(&sBlockedQueue, joinThreads->tid_blocked, &blockedThread) == 0){
+                if(AppendFila2(&sRunQueue, (void *)blockedThread) != 0){
+                    printf("Error: insertion of the thread in the suspended run queue failed");
+                }
+                return 0;
+            }
+        }
+    }while(NextFila2(&joinedThreads) == 0);
+
+    return -1;    
+}
+
 int schedule(){
     if(FirstFila2(&runQueue) != 0)
         return 0;
@@ -109,7 +161,7 @@ int schedule(){
 // free memory alocated to thread that has finished
 // call the scheduler
 int threadFinalized(){
-    // check join here
+    unblockThread();
 
     free(runningThread->context.uc_stack.ss_sp); //free thread stack
     free(runningThread); // free thread
@@ -205,7 +257,7 @@ int cyield(void){
     threadYield->state = PROCST_APTO;
 
     if(AppendFila2(&runQueue, (void*)threadYield) != 0){
-        printf("Error: insertion of the thread back in the Run Queue failed\n");
+        printf("Error: insertion of the thread back in the run queue failed\n");
         return -1;
     }
 
@@ -218,6 +270,47 @@ int cyield(void){
 }
 
 int cjoin(int tid){
+    pair *joinThreads;
+    TCB_t *blockedThread;
+
+    initializeCThread();
+
+    if(tid == 0){
+        printf("Error: can not wait for main");
+        return -1;
+    }
+    if(isJoined(tid)){
+        printf("Error: can not wait for this tid because someone else is already waiting");
+        return -1;
+    }
+    if(!isTidOnQueue(&blockedQueue, tid) || !isTidOnQueue(&sBlockedQueue, tid) 
+        || !isTidOnQueue(&runQueue, tid) || !isTidOnQueue(&sRunQueue, tid)){
+        printf("Error: can not wait for thread that has finished or does not exists");
+        return -1;
+    }
+
+    joinThreads->tid_blocking = tid;
+    joinThreads->tid_blocked = runningThread->tid;
+    
+    blockedThread = runningThread;
+    blockedThread->state = PROCST_BLOQ;
+
+    if(AppendFila2(&blockedQueue, (void *)blockedThread)!=0){
+        printf("Error: insertion of the thread in the blocked queue failed");
+        return -1;
+    }
+
+    if(AppendFila2(&joinedThreads, joinThreads) != 0){
+        printf("Error: insertion of the pair in the joined threads list failed");
+        return -1;
+    }
+    
+    runningThread = NULL;
+    
+    if(swapcontext(&blockedThread->context, &scheduler) == -1){
+        printf("Error: could not swap context");
+        return -1;
+    }
 
     return 0;
 }
