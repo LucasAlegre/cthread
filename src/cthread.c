@@ -87,7 +87,7 @@ int pullTidOnQueue(PFILA2 queue, int tid, TCB_t** returnThread){
             (*returnThread) = thread;
             return 0;
         }
-    } while(NextFila2(queue) == 0);
+    }while(NextFila2(queue) == 0);
 
     // Tid not found
     return -1;
@@ -148,7 +148,7 @@ int schedule(){
     if(FirstFila2(&runQueue) != 0)
         return 0;
 
-    runningThread = (TCB_t*) GetAtIteratorFila2(&runQueue);
+    runningThread = (TCB_t*)GetAtIteratorFila2(&runQueue);
     DeleteAtIteratorFila2(&runQueue);
 
     runningThread->state = PROCST_EXEC;
@@ -161,6 +161,7 @@ int schedule(){
 // free memory alocated to thread that has finished
 // call the scheduler
 int threadFinalized(){
+
     unblockThread();
 
     free(runningThread->context.uc_stack.ss_sp); //free thread stack
@@ -241,7 +242,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio){
         return -1;
     }
 
-    return 0;
+    return createdThread->tid;
 }
 
 int cyield(void){
@@ -270,22 +271,23 @@ int cyield(void){
 }
 
 int cjoin(int tid){
-    pair *joinThreads;
+    pair *joinThreads = (pair*)malloc(sizeof(pair));
     TCB_t *blockedThread;
 
     initializeCThread();
 
     if(tid == 0){
-        printf("Error: can not wait for main");
+        printf("Error: can not wait for main\n");
         return -1;
     }
     if(isJoined(tid)){
-        printf("Error: can not wait for this tid because someone else is already waiting");
+        printf("Error: can not wait for this tid because someone else is already waiting\n");
         return -1;
     }
-    if(!isTidOnQueue(&blockedQueue, tid) || !isTidOnQueue(&sBlockedQueue, tid) 
-        || !isTidOnQueue(&runQueue, tid) || !isTidOnQueue(&sRunQueue, tid)){
-        printf("Error: can not wait for thread that has finished or does not exists");
+
+    if(!isTidOnQueue(&blockedQueue, tid) && !isTidOnQueue(&sBlockedQueue, tid) 
+        && !isTidOnQueue(&runQueue, tid) && !isTidOnQueue(&sRunQueue, tid)){
+        printf("Error: can not wait for thread that has finished or does not exists\n");
         return -1;
     }
 
@@ -295,20 +297,20 @@ int cjoin(int tid){
     blockedThread = runningThread;
     blockedThread->state = PROCST_BLOQ;
 
-    if(AppendFila2(&blockedQueue, (void *)blockedThread)!=0){
-        printf("Error: insertion of the thread in the blocked queue failed");
+    if(AppendFila2(&blockedQueue, (void *)blockedThread) != 0){
+        printf("Error: insertion of the thread in the blocked queue failed\n");
         return -1;
     }
 
     if(AppendFila2(&joinedThreads, joinThreads) != 0){
-        printf("Error: insertion of the pair in the joined threads list failed");
+        printf("Error: insertion of the pair in the joined threads list failed\n");
         return -1;
     }
     
     runningThread = NULL;
     
     if(swapcontext(&blockedThread->context, &scheduler) == -1){
-        printf("Error: could not swap context");
+        printf("Error: could not swap context\n");
         return -1;
     }
 
