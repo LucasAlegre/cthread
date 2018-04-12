@@ -127,7 +127,10 @@ int unblockThread(){
             if(pullTidOnQueue(&blockedQueue, joinThreads->tid_blocked, &blockedThread) == 0){
                 if(AppendFila2(&runQueue, (void *)blockedThread) != 0){
                     printf("Error: insertion of the thread in the run queue failed");
+                    return -1;
                 }
+                free(joinThreads);
+                blockedThread->state = PROCST_APTO;
                 return 0;
             }
             // if thread was blocked and suspended
@@ -135,7 +138,10 @@ int unblockThread(){
             else if(pullTidOnQueue(&sBlockedQueue, joinThreads->tid_blocked, &blockedThread) == 0){
                 if(AppendFila2(&sRunQueue, (void *)blockedThread) != 0){
                     printf("Error: insertion of the thread in the suspended run queue failed");
-                }
+                    return -1;
+                } 
+                free(joinThreads);
+                blockedThread->state = PROCST_APTO_SUS;
                 return 0;
             }
         }
@@ -333,7 +339,7 @@ int csuspend(int tid) {
         if(pullTidOnQueue(&runQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&sRunQueue, (void*)thread) == 0) {
-		thread->state = PROCST_APTO_SUS;
+		        thread->state = PROCST_APTO_SUS;
                 return 0;
             }
         }
@@ -348,7 +354,7 @@ int csuspend(int tid) {
         if(pullTidOnQueue(&blockedQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&sBlockedQueue, (void*)thread) == 0) {
-		thread->state = PROCST_BLOQ_SUS;
+		        thread->state = PROCST_BLOQ_SUS;
                 return 0;
             }
         }
@@ -375,7 +381,7 @@ int cresume(int tid) {
         if(pullTidOnQueue(&sRunQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&runQueue, (void*)thread) == 0) {
-		thread->state = PROCST_APTO;
+		        thread->state = PROCST_APTO;
                 return 0;
             }
         }
@@ -390,7 +396,7 @@ int cresume(int tid) {
         if(pullTidOnQueue(&sBlockedQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&blockedQueue, (void*)thread) == 0) {
-		thread->state = PROCST_BLOQ;
+		        thread->state = PROCST_BLOQ;
                 return 0;
             }
         }
