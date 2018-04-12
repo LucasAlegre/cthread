@@ -333,6 +333,7 @@ int csuspend(int tid) {
         if(pullTidOnQueue(&runQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&sRunQueue, (void*)thread) == 0) {
+		thread->state = PROCST_APTO_SUS;
                 return 0;
             }
         }
@@ -347,6 +348,7 @@ int csuspend(int tid) {
         if(pullTidOnQueue(&blockedQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&sBlockedQueue, (void*)thread) == 0) {
+		thread->state = PROCST_BLOQ_SUS;
                 return 0;
             }
         }
@@ -373,6 +375,7 @@ int cresume(int tid) {
         if(pullTidOnQueue(&sRunQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&runQueue, (void*)thread) == 0) {
+		thread->state = PROCST_APTO;
                 return 0;
             }
         }
@@ -387,6 +390,7 @@ int cresume(int tid) {
         if(pullTidOnQueue(&sBlockedQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&blockedQueue, (void*)thread) == 0) {
+		thread->state = PROCST_BLOQ;
                 return 0;
             }
         }
@@ -448,7 +452,7 @@ int csignal(csem_t *sem){
 
     sem->count = sem->count + 1;
 
-    // Se fila não está vazia
+    // Se fila nÃ£o estÃ¡ vazia
     if(FirstFila2(sem->fila) == 0){
         // Get first on semaphore queue and remove it
         TCB_t* wakeThread = (TCB_t*) GetAtIteratorFila2(sem->fila);
