@@ -2,7 +2,7 @@
 
 O objetivo deste trabalho é a aplicação dos conceitos de sistemas operacionais relacionados ao escalonamento e ao contexto de execução, o que inclui a criação, chaveamento e destruição de contextos. Esses conceitos foram empregados no desenvolvimento de uma biblioteca de threads em nível de usuário (modelo N:1). Essa biblioteca de threads, denominada de compact thread (ou apenas cthread), oferece capacidades básicas para programação com threads como criação, execução, sincronização, término e trocas de contexto.
 
-Para documentação detalhada, consulte o arquivo Cthreads 2018-01-C.pdf
+Para documentação detalhada, consulte o arquivo [Cthreads 2018-01-C.pdf](https://github.com/LucasAlegre/cthread/blob/master/Cthreads%202018-01-C.pdf)
 
 ![alt text](https://github.com/LucasAlegre/cthread/blob/master/cthread.png)
 
