@@ -29,7 +29,7 @@ make
 ```
 
 ### Estrutura de Diretórios e Arquivos
-
+```
 .
 └── cthread
     ├── bin
@@ -55,6 +55,7 @@ make
     │   └── cthread.c
     ├── support.pdf
     └── testes
+```
 
 ## Authors
 
