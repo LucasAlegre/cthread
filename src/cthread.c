@@ -192,6 +192,8 @@ void initializeCThread(){
         printf("Error: Blocked Queue initialization failed\n");
     if(CreateFila2(&sBlockedQueue) != 0)
         printf("Error: Suspend-Blocked Queue initialization failed\n");
+    if(CreateFila2(&joinedThreads) != 0)
+        printf("Error: JoinedThreads Queue initialization failed\n");
 
     mainThread.tid = 0;
     mainThread.prio = 0;
@@ -213,6 +215,7 @@ void initializeCThread(){
     makecontext(&finalize, (void(*)(void))threadFinalized, 0);
 
     libraryInitialized = 1;
+
 }
 
 int cidentify(char *name, int size){
@@ -375,6 +378,7 @@ int cresume(int tid) {
 
     // Check if thread is in suspended run queue
     if (isTidOnQueue(&sRunQueue, tid)) {
+       
         TCB_t* thread;
 
         // Tries to remove thread from suspended queue (0 == no error)
@@ -411,6 +415,7 @@ int csem_init(csem_t *sem, int count){
     initializeCThread();
 
     sem->count = count;
+    sem->fila = (PFILA2)malloc(sizeof(FILA2));
     if(CreateFila2(sem->fila) == 0){
         return 0;
     }

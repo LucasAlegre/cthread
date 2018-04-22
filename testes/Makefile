@@ -1,17 +1,21 @@
 #
-# Makefile para programas exemplo
+# Makefile para os testes
 # 
 
 CC=gcc
-LIB_DIR=../lib
+CFLAGS=-Wall -I../include -L../lib -lcthread
+LIB=../lib/libcthread.a
 
-all: exemplo
+all: teste1 teste2
 
-exemplo: exemplo.c $(LIB_DIR)/libcthread.a
-	$(CC) -o exemplo exemplo.c -L$(LIB_DIR) -lcthread -Wall
+teste1: teste1.c $(LIB)
+	$(CC) -o teste1 teste1.c $(CFLAGS)
+
+teste2: teste2.c $(LIB)
+	$(CC) -o teste2 teste2.c $(CFLAGS)
 
 clean:
-	rm -rf exemplo mandel teste_vetor barbeiro filosofos prodcons series *.o *~
+	rm -rf teste1 teste2 *.o *~
 
 
 
