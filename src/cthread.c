@@ -151,8 +151,9 @@ int unblockThread(){
 }
 
 int schedule(){
-    if(FirstFila2(&runQueue) != 0)
-        return 0;
+    while(FirstFila2(&runQueue) != 0) {
+        // DO NOTHING
+    }
 
     runningThread = (TCB_t*)GetAtIteratorFila2(&runQueue);
     DeleteAtIteratorFila2(&runQueue);
@@ -175,7 +176,9 @@ int threadFinalized(){
 
     runningThread = NULL;
     
-    schedule();
+    while(schedule() == -1) {
+        // NOTHING
+    }
 
     return 0;
 }
