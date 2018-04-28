@@ -251,6 +251,8 @@ int ccreate (void* (*start)(void*), void *arg, int prio){
 
     if(AppendFila2(&runQueue, (void*)createdThread) != 0){
         printf("Error: insertion of the new thread in the Run Queue failed\n");
+        free(createdThread->context.uc_stack.ss_sp);
+        free(createdThread);
         return -1;
     }
 
@@ -345,7 +347,7 @@ int csuspend(int tid) {
         if(pullTidOnQueue(&runQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&sRunQueue, (void*)thread) == 0) {
-		        thread->state = PROCST_APTO_SUS;
+                thread->state = PROCST_APTO_SUS;
                 return 0;
             }
         }
@@ -360,7 +362,7 @@ int csuspend(int tid) {
         if(pullTidOnQueue(&blockedQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&sBlockedQueue, (void*)thread) == 0) {
-		        thread->state = PROCST_BLOQ_SUS;
+                thread->state = PROCST_BLOQ_SUS;
                 return 0;
             }
         }
@@ -388,7 +390,7 @@ int cresume(int tid) {
         if(pullTidOnQueue(&sRunQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&runQueue, (void*)thread) == 0) {
-		        thread->state = PROCST_APTO;
+                thread->state = PROCST_APTO;
                 return 0;
             }
         }
@@ -403,7 +405,7 @@ int cresume(int tid) {
         if(pullTidOnQueue(&sBlockedQueue, tid, &thread) == 0) {
             // Tries to append thread to queue
             if(AppendFila2(&blockedQueue, (void*)thread) == 0) {
-		        thread->state = PROCST_BLOQ;
+                thread->state = PROCST_BLOQ;
                 return 0;
             }
         }
