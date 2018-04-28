@@ -6,7 +6,7 @@ CC=gcc
 CFLAGS=-Wall -I../include -L../lib -lcthread
 LIB=../lib/libcthread.a
 
-all: teste1 teste2 teste3 teste4
+all: teste1 teste2 teste3 teste4 teste5
 
 teste1: teste1.c $(LIB)
 	$(CC) -o teste1 teste1.c $(CFLAGS)
@@ -20,8 +20,11 @@ teste3: teste3.c $(LIB)
 teste4: teste4.c $(LIB)
 	$(CC) -o teste4 teste4.c $(CFLAGS)
 
+teste5: teste5.c $(LIB)
+	$(CC) -o teste5 teste5.c $(CFLAGS)
+
 clean:
-	rm -rf teste1 teste2 teste3 teste4 *.o *~
+	rm -rf teste1 teste2 teste3 teste4 teste5 *.o *~
 
 
 
