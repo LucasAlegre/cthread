@@ -223,7 +223,7 @@ void initializeCThread(){
 
 int cidentify(char *name, int size){
 
-    char *group = "Lucas Nunes Alegre 00274693\nAline Weber 00274720\nLucas Sonntag Hagen\n\0";
+    char *group = "Lucas Nunes Alegre 00274693\nAline Weber 00274720\nLucas Sonntag Hagen 00274698\n\0";
     if(size < strlen(group)){
         printf("Size given is not sufficient to copy the whole string!\n");
         return -1;
