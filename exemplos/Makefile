@@ -29,7 +29,8 @@ series: series.c $(LIB_DIR)/libcthread.a
 	$(CC) -o series series.c -L$(LIB_DIR) -lcthread -lm -Wall
 	
 clean:
-	rm -rf exemplo mandel teste_vetor barbeiro filosofos prodcons series *.o *~
+	rm -rf exemplo mandel teste_vetor series *.o *~
+#	rm -rf exemplo mandel teste_vetor barbeiro filosofos prodcons series *.o *~
 
 
 
