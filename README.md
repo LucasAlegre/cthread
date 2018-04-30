@@ -36,15 +36,11 @@ make
     │   └── support.o
     ├── Cthreads 2018-01-C.pdf
     ├── exemplos
-    │   ├── barbeiro.c
     │   ├── exemplo.c
-    │   ├── filosofos.c
     │   ├── Makefile
     │   ├── mandel.c
-    │   ├── prodcons.c
     │   ├── series.c
     │   ├── teste_vetor.c
-    │   └── testSupport.c
     ├── include
     │   ├── cdata.h
     │   ├── cthread.h
